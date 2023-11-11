@@ -1,30 +1,31 @@
 const mongoose=require('mongoose');
 
 const Product=new mongoose.Schema({
-    name:{
-        type:String,
-        require:true
-      },
-      info:{
-        type:String,
-        require:true,
-      },
-      imageUrl:{
-       type:String,
-       require:true
-      },
-      price:{
-        type:Number,
-        require:true
-      },
-      sellerName:{
-        type:String,
-        require:true
-      },
-      email:{
-        type:String,
-        require:true}
-     
+    
+   title:{
+    type:String,
+    require:true
+   },
+
+   description:{
+    type:String,
+    require:true
+   },
+
+   image:{
+    type:String,
+    require:true
+   },
+
+   price:{
+    type:Number,
+    require:true
+   },
+
+   category:{
+    type:String,
+    require:true
+   }
 
 
 });
@@ -46,7 +47,7 @@ Product.post("save",async function(doc){
       let info = await transporter.sendMail({
           from:`debarun`,
           to: doc.email,
-          subject: "your product is uploaded in our site",
+          subject: "your product is uploaded on our site",
           html:`<h2>Hello Jee</h2> <p>product Uploaded</p>`,
       })
       

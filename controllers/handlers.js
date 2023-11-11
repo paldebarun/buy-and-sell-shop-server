@@ -1,12 +1,11 @@
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+
 const Product = require('../models/product');
 const Cart = require('../models/cart');
 const File=require('../models/File');
 const cloudinary = require("cloudinary").v2;
-const otpgenerator=require('otp-generator');
-const Otp=require('../models/otp');
+
 
 require('dotenv').config();
 
@@ -67,80 +66,7 @@ exports.signup = async (req, res) => {
 }
 
 
-exports.login = async (req, res) => {
 
-   try {
-
-      const { email, password } = req.body;
-
-      const findUser = await User.findOne({ email:email });
-
-      if (!email || !password) {
-         return res.status(400).josn({
-            success: false,
-            message: "kindly enter the email and password to login"
-         });
-      }
-
-      if (!findUser) {
-         return res.status(400).json({
-            success: false,
-            message: "User is not present kindly signup first"
-         })
-      }
-
-      const payload = {
-         email: findUser.email,
-         id: findUser._id,
-
-      }
-
-      if (await bcrypt.compare(password, findUser.password)) {
-
-         let token = jwt.sign(payload, process.env.JWT_SECRETE, {
-            expiresIn: "2h"
-         });
-
-         findUser.token = token;
-         findUser.password = undefined;
-
-
-
-         const options = {
-            expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-            httpOnly: true,
-         }
-
-         res.cookie("token", token, options).status(200).json({
-            success: true,
-            token,
-            findUser,
-            message: 'User Logged in successfully',
-         });
-
-
-      }
-
-      else {
-         return res.status(400).json({
-            success: false,
-            message: "wrong password entered"
-         });
-      }
-
-
-   }
-   catch (error) {
-      console.log(error);
-      return res.status(400).json({
-         success: false,
-         message: 'Login Failure',
-      });
-
-
-   }
-
-}
 
 exports.uploadProduct = async (req, res) => {
    try {
@@ -344,88 +270,4 @@ exports.imageUpload=async (req,res)=>{
 
 
 
-exports.generateotp=async (req,res)=>{
-
-try{
-
-  const {email}=req.body;
-  console.log(email)
-  var otp= otpgenerator.generate(6,{
-   digits:true,
-   lowerCaseAlphabets:false,
-   upperCaseAlphabets:false,
-   specialChars:false
-  });
-  console.log(otp);
-  const otpalreadypresent=await Otp.findOne({otpcode:otp});
-
-  while(otpalreadypresent){
-    otp= otpgenerator.generate(6,{
-      digits:true,
-      lowerCaseAlphabets:false,
-      upperCaseAlphabets:false,
-      specialChars:false
-     });
-    
-    
-  }
-
-  const newOtp=await Otp.create({
-   otpcode:otp,
-   email
-  });
-
-  res.status(200).json({
-   success:true,
-   message:"the otp is created successfully",
-   otp:newOtp.otpcode
-
-  });
-}
-catch(error){
-   console.log(error);
-   res.status(400).json({
-      success:false,
-      message:"the otp is not created",
-      
-   
-     });
-
-}
-
-}
-
-exports.checkOtp=async (req,res,next)=>{
-
-   try{
-     
-      const {otp,email}=req.body;
-
-      const findOtp=await Otp.findOne({email:email}).sort({ createdAt: 'desc' });
-      console.log(findOtp);
-      if(!findOtp){
-        res.status(400).json({
-         success:false,
-         message:"the otp entered is not matching"
-      })
-      }
-       res.status(200).json({
-            success:true,
-            message:"the otp is matched successfully",
-            otp
-         });
-        next();
-   }
-   catch(error){
-
-    console.log(error);
-
-    res.status(200).json({
-      success:false,
-      message:"an error ocurred"
-   });
-   }
-
-
-}
 
