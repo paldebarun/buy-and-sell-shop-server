@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const Product = require('../models/product');
 const Cart = require('../models/cart');
 const File=require('../models/File');
+
 const cloudinary = require("cloudinary").v2;
 
 
@@ -13,35 +14,31 @@ require('dotenv').config();
 
 exports.signup = async (req, res) => {
    try {
-      const { firstName, lastName, email, password } = req.body;
+      const { id,userName,firstName, lastName, email, phone } = req.body;
       const existingUser = await User.findOne({ email });
 
       if (existingUser) {
-         return res.status(400).json(
+         return res.status(200).json(
             {
-               success: false,
+               success: true,
                message: "user already present"
             }
          );
       }
-      let hashedpassword;
+      
 
-      try {
-         hashedpassword = await bcrypt.hash(password, 10);
-
-      }
-      catch (error) {
-         return res.status(400).json({
-            success: false,
-            message: "hashing of the password was not successful"
-         })
-      }
+      const cart=await Cart.create({
+           products:[]
+      })
 
       const newUser = await User.create({
+         id,
+         userName,
          lastName,
          firstName,
          email,
-         password: hashedpassword,
+         phone,
+         cart:cart._id
 
       });
 
@@ -49,6 +46,7 @@ exports.signup = async (req, res) => {
          {
             success: true,
             message: "user registered successfully",
+            user:newUser
          }
       );
 
@@ -71,33 +69,37 @@ exports.signup = async (req, res) => {
 exports.uploadProduct = async (req, res) => {
    try {
 
-      const { name, info, imageUrl, price, sellerName, email } = req.body;
+      const { user, title, description,  image, price, category } = req.body;
 
-      if (!name || !info || !imageUrl || !price || !sellerName || !email) {
+      console.log("this is user : ",typeof user);
+
+      if (!user || !title || !description || !price  || !category) {
          return res.status(400).json({
             success: false,
             message: "enter the informations correctly"
          });
       }
-
-      const uploadermail = "paldebarun27@gmail.com";
-
-      const uploaded = await User.findOne({ email: uploadermail });
-      console.log(uploaded);
-      if (!uploaded) {
-         return res.status(400).json({
-            success: false,
-            message: "the uploader is not registered"
-         })
-      }
+      console.log("the user is ",user); 
+      
+      const userdata=await User.find({id:user});
+      console.log("user data : ",userdata);
+       
+      // const uploaded = await User.findOne({ email: uploadermail });
+      // console.log(uploaded);
+      // if (!uploaded) {
+      //    return res.status(400).json({
+      //       success: false,
+      //       message: "the uploader is not registered"
+      //    })
+      // }
 
       const newproduct = await Product.create({
-         name, info, imageUrl, price, sellerName, email, uploader: uploaded._id
+         user, title, image, price, description,category,email:userdata.email
       });
 
 
 
-      const updatedUser = await User.findByIdAndUpdate({ _id: uploaded._id }, {
+      const updatedUser = await User.findOneAndUpdate({ id: user }, {
          $push: {
             products: newproduct._id,
          },
@@ -147,42 +149,19 @@ exports.getdata = async (req, res) => {
 
 exports.addtocart = async (req, res) => {
    try {
-      const { product } = req.body;
-      const userMail = "paldebarun27@gmail.com";
-      const user = await User.findOne({ email: userMail });
-      console.log(product);
-      if (!user) {
-         return res.status(400).json({
-            success: false,
-            message: "you are not registered to add an item to the cart"
-         })
-      }
-      if (!user.cart) {
-         const cart = await Cart.create({
-            firstName: user.firstName,
-            lastName: user.lastName,
-            products: [product._id]
+      const { product,user_id } = req.body;
+      
 
-         });
+       const userdata=await User.findById(user_id);
+    
 
-
-
-         const updatedUser = await User.findByIdAndUpdate({ _id: user._id }, { cart: cart._id }, { new: true });
-
-         return res.status(200).json({
-            success: true,
-            message: "item added to cart successfully",
-            updatedUser
-         });
-
-      }
-
-      const updatedCart = await Cart.findByIdAndUpdate({ _id: user.cart }, {
+      const updatedCart = await Cart.findByIdAndUpdate({ _id: userdata.cart }, {
          $push: {
-            products: product._id,
+            products: product,
          },
       },
          { new: true });
+
 
       return res.status(200).json({
          success: true,
@@ -209,6 +188,8 @@ exports.addtocart = async (req, res) => {
 
 
 
+
+
 function isFileTypeSupported(type, supportedTypes) {
    return supportedTypes.includes(type);
 }
@@ -225,9 +206,8 @@ async function uploadFileToCloudinary(file, folder, quality) {
    return await cloudinary.uploader.upload(file.tempFilePath, options);
 }
 
-
 exports.imageUpload=async (req,res)=>{
-
+ 
    try{
    console.log("this is upload");
    const file = req.files.imageFile;
@@ -249,7 +229,7 @@ exports.imageUpload=async (req,res)=>{
 
         const fileData = await File.create({
          
-         imageUrl:response.secure_url,
+         imageUrl:response.url,
      });
 
 
@@ -257,6 +237,7 @@ exports.imageUpload=async (req,res)=>{
          success:true,
          imageUrl:response.secure_url,
          message:'Image Successfully Uploaded',
+         
      });
    }
    catch(error){
@@ -270,4 +251,141 @@ exports.imageUpload=async (req,res)=>{
 
 
 
+
+exports.removeFromCart = async (req, res) => {
+   try {
+      const { productId, user_id } = req.body;
+
+      const userdata = await User.findById(user_id);
+
+      const updatedCart = await Cart.findByIdAndUpdate(
+         { _id: userdata.cart },
+         {
+            $pull: {
+               products: { _id: productId },
+            },
+         },
+         { new: true }
+      );
+
+      return res.status(200).json({
+         success: true,
+         message: "Item removed from cart successfully",
+         updatedCart,
+      });
+
+   } catch (error) {
+      console.log(error);
+      return res.status(400).json({
+         success: false,
+         message: "Item not removed from cart due to some error",
+      });
+   }
+};
+
+
+
+exports.isPresentInCart = async (req, res) => {
+   try {
+      const { productId, user_id } = req.body;
+
+      const userdata = await User.findById(user_id);
+
+      const cart = await Cart.findOne({ _id: userdata.cart });
+
+      if (!cart) {
+         return res.status(404).json({
+            success: false,
+            message: "Cart not found",
+         });
+      }
+
+      const productExists = cart.products.some(
+         (product) => product._id.toString() === productId
+      );
+      
+      return res.status(200).json({
+         success: true,
+         message: productExists
+            ? "Product is present in the cart"
+            : "Product is not present in the cart",
+         productExists,
+      });
+
+   } catch (error) {
+      console.log(error);
+      return res.status(400).json({
+         success: false,
+         message: "Error while checking product in cart",
+      });
+   }
+};
+
+exports.getAllProductsInCart = async (req, res) => {
+   try {
+      const { user_id } = req.body;
+
+      const userdata = await User.findById(user_id);
+
+      const cart = await Cart.findOne({ _id: userdata.cart });
+
+      if (!cart) {
+         return res.status(404).json({
+            success: false,
+            message: "Cart not found",
+         });
+      }
+
+      
+      const productIds = cart.products;
+
+      
+      const productsInCart = await Product.find({ _id: { $in: productIds } });
+
+      return res.status(200).json({
+         success: true,
+         message: "Products fetched successfully",
+         products: productsInCart,
+      });
+
+   } catch (error) {
+      console.log(error);
+      return res.status(400).json({
+         success: false,
+         message: "Error while fetching products in cart",
+      });
+   }
+};
+
+exports.getProductsByCategory = async (req, res) => {
+   try {
+     const { category } = req.body; 
+ 
+     const products = await Product.find({ category });
+ 
+     if (!products || products.length === 0) {
+       return res.status(404).json({
+         success: false,
+         message: "No products found for the given category",
+         products: [],
+       });
+     }
+ 
+     return res.status(200).json({
+       success: true,
+       message: "Products found for the given category",
+       products,
+     });
+   } catch (error) {
+     console.error(error);
+     return res.status(500).json({
+       success: false,
+       message: "Error while fetching products by category",
+     });
+   }
+ };
+ 
+
+
+ 
 

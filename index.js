@@ -1,5 +1,6 @@
 const express=require('express');
 const app=express();
+const cors = require('cors');
 
 require('dotenv').config();
 const fileupload = require("express-fileupload");
@@ -7,6 +8,11 @@ const fileupload = require("express-fileupload");
 app.use(fileupload({
     useTempFiles : true,
     tempFileDir : '/tmp/'
+}));
+
+app.use(cors({
+    credentials : true,
+    origin:true
 }));
 
 const cloudinary = require("./config/cloudinary");
