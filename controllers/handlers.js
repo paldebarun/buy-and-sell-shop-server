@@ -1,6 +1,6 @@
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
-
+const { ObjectId } = require('mongoose').Types;
 const Product = require('../models/product');
 const Cart = require('../models/cart');
 const File=require('../models/File');
@@ -15,6 +15,12 @@ require('dotenv').config();
 exports.signup = async (req, res) => {
    try {
       const { id,userName,firstName, lastName, email, phone } = req.body;
+      if(!id && !userName && !firstName && !lastName && !email && !phone){
+         return res.status(404).json({
+            success : false,
+            message : "Data not found"
+         })
+      }
       const existingUser = await User.findOne({ email });
 
       if (existingUser) {
@@ -72,26 +78,19 @@ exports.uploadProduct = async (req, res) => {
       const { user, title, description,  image, price, category } = req.body;
 
       console.log("this is user : ",typeof user);
-
+           
       if (!user || !title || !description || !price  || !category) {
          return res.status(400).json({
             success: false,
             message: "enter the informations correctly"
          });
       }
+
       console.log("the user is ",user); 
       
       const userdata=await User.find({id:user});
+
       console.log("user data : ",userdata);
-       
-      // const uploaded = await User.findOne({ email: uploadermail });
-      // console.log(uploaded);
-      // if (!uploaded) {
-      //    return res.status(400).json({
-      //       success: false,
-      //       message: "the uploader is not registered"
-      //    })
-      // }
 
       const newproduct = await Product.create({
          user, title, image, price, description,category,email:userdata.email
@@ -152,7 +151,7 @@ exports.addtocart = async (req, res) => {
       const { product,user_id } = req.body;
       
 
-       const userdata=await User.findById(user_id);
+      const userdata=await User.findOne({id:user_id});
     
 
       const updatedCart = await Cart.findByIdAndUpdate({ _id: userdata.cart }, {
@@ -161,7 +160,8 @@ exports.addtocart = async (req, res) => {
          },
       },
          { new: true });
-
+       
+         console.log("this is updated cart ",updatedCart);
 
       return res.status(200).json({
          success: true,
@@ -254,34 +254,47 @@ exports.imageUpload=async (req,res)=>{
 
 exports.removeFromCart = async (req, res) => {
    try {
-      const { productId, user_id } = req.body;
-
-      const userdata = await User.findById(user_id);
-
-      const updatedCart = await Cart.findByIdAndUpdate(
-         { _id: userdata.cart },
-         {
-            $pull: {
-               products: { _id: productId },
-            },
-         },
-         { new: true }
-      );
-
-      return res.status(200).json({
-         success: true,
-         message: "Item removed from cart successfully",
-         updatedCart,
-      });
-
-   } catch (error) {
-      console.log(error);
-      return res.status(400).json({
+     const { productId, user_id } = req.body;
+ 
+     // Find the user by their ID
+     const user = await User.findOne({ id: user_id });
+ 
+     if (!user) {
+       return res.status(404).json({
          success: false,
-         message: "Item not removed from cart due to some error",
-      });
+         message: "User not found"
+       });
+     }
+ 
+     // Find the cart by its ID
+     const cart = await Cart.findById(user.cart);
+ 
+     if (!cart) {
+       return res.status(404).json({
+         success: false,
+         message: "Cart not found"
+       });
+     }
+ 
+     // Remove the product from the cart
+     const updatedCart = cart.products.filter((product) => product._id.toString() !== productId);
+ 
+     // Update the cart in the database
+     await Cart.findByIdAndUpdate(cart._id, { products: updatedCart });
+ 
+     return res.status(200).json({
+       success: true,
+       message: "Product successfully removed from cart",
+       removedProduct: { _id: productId } // Assuming you want to return information about the removed product
+     });
+   } catch (error) {
+     console.error(error);
+     return res.status(500).json({
+       success: false,
+       message: "Internal server error"
+     });
    }
-};
+ };
 
 
 
@@ -291,16 +304,16 @@ exports.isPresentInCart = async (req, res) => {
 
       const userdata = await User.findById(user_id);
 
-      const cart = await Cart.findOne({ _id: userdata.cart });
+      const cartdata = await Cart.findOne({ _id: userdata.cart });
 
-      if (!cart) {
+      if (!cartdata) {
          return res.status(404).json({
             success: false,
             message: "Cart not found",
          });
       }
 
-      const productExists = cart.products.some(
+      const productExists = cartdata.products.some(
          (product) => product._id.toString() === productId
       );
       
@@ -325,7 +338,7 @@ exports.getAllProductsInCart = async (req, res) => {
    try {
       const { user_id } = req.body;
 
-      const userdata = await User.findById(user_id);
+      const userdata = await User.findOne({id:user_id});
 
       const cart = await Cart.findOne({ _id: userdata.cart });
 
@@ -356,6 +369,7 @@ exports.getAllProductsInCart = async (req, res) => {
       });
    }
 };
+
 
 exports.getProductsByCategory = async (req, res) => {
    try {
