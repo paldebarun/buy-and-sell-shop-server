@@ -1,6 +1,6 @@
 const User = require('../models/user');
-const bcrypt = require('bcrypt');
-const { ObjectId } = require('mongoose').Types;
+
+// const { ObjectId } = require('mongoose').Types;
 const Product = require('../models/product');
 const Cart = require('../models/cart');
 const File=require('../models/File');
@@ -378,7 +378,7 @@ exports.getProductsByCategory = async (req, res) => {
      const products = await Product.find({ category });
  
      if (!products || products.length === 0) {
-       return res.status(404).json({
+       return res.status(200).json({
          success: false,
          message: "No products found for the given category",
          products: [],
