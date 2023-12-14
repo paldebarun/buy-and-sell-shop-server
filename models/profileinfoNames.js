@@ -29,4 +29,4 @@ const names=new mongoose.Schema({
 
 
 
-module.exports=mongoose.model("profileInfonames",names);
+module.exports=mongoose.model("names",names);

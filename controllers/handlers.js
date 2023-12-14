@@ -1,5 +1,5 @@
 const User = require('../models/user');
-const profileInfonames=require('../models/profileinfoNames')
+const names=require('../models/profileinfoNames')
 const Product = require('../models/product');
 const Cart = require('../models/cart');
 const File=require('../models/File');
@@ -422,7 +422,7 @@ exports.getProductsByCategory = async (req, res) => {
       }
 
       
-      const profileInfo = await profileInfoNames.create({
+      const profileInfo = await names.create({
          user,
          firstName,
          lastName,
@@ -467,7 +467,7 @@ exports.getProfileInfoNames = async (req, res) => {
       }
 
       
-      const profileInfo = await profileInfonames.findOne({ user });
+      const profileInfo = await names.findOne({ user });
 
       if (!profileInfo) {
          return res.status(404).json({
