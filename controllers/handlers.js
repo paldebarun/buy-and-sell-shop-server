@@ -1,10 +1,8 @@
 const User = require('../models/user');
-
-// const { ObjectId } = require('mongoose').Types;
+const profileInfonames=require('../models/profileinfoNames')
 const Product = require('../models/product');
 const Cart = require('../models/cart');
 const File=require('../models/File');
-
 const cloudinary = require("cloudinary").v2;
 
 
@@ -401,5 +399,93 @@ exports.getProductsByCategory = async (req, res) => {
  
 
 
+ exports.profileinfonames = async (req, res) => {
+   try {
+      const { user, firstName, lastName } = req.body;
+      
+      
+      if (!user || !firstName || !lastName) {
+         return res.status(400).json({
+            success: false,
+            message: "Required fields are missing",
+         });
+      }
+
+      
+      const existingUser = await User.findOne({ id: user });
+
+      if (!existingUser) {
+         return res.status(404).json({
+            success: false,
+            message: "User not found",
+         });
+      }
+
+      
+      const profileInfo = await profileInfoNames.create({
+         user,
+         firstName,
+         lastName,
+      });
+
+      return res.status(200).json({
+         success: true,
+         message: "Profile information names saved successfully",
+         profileInfo,
+      });
+   } catch (error) {
+      console.error(error);
+      return res.status(500).json({
+         success: false,
+         message: "Internal server error",
+      });
+   }
+};
  
 
+
+exports.getProfileInfoNames = async (req, res) => {
+   try {
+      const { user } = req.body;
+
+      
+      if (!user) {
+         return res.status(400).json({
+            success: false,
+            message: "User ID is missing",
+         });
+      }
+
+     
+      const existingUser = await User.findOne({ id: user });
+
+      if (!existingUser) {
+         return res.status(404).json({
+            success: false,
+            message: "User not found",
+         });
+      }
+
+      
+      const profileInfo = await profileInfonames.findOne({ user });
+
+      if (!profileInfo) {
+         return res.status(404).json({
+            success: false,
+            message: "Profile information names not found for the user",
+         });
+      }
+
+      return res.status(200).json({
+         success: true,
+         message: "Profile information names retrieved successfully",
+         profileInfo,
+      });
+   } catch (error) {
+      console.error(error);
+      return res.status(500).json({
+         success: false,
+         message: "Internal server error",
+      });
+   }
+};

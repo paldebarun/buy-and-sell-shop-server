@@ -1,16 +1,16 @@
 const mongoose = require('mongoose');
 
 
-const ProfileInfo=new mongoose.Schema({
+const names=new mongoose.Schema({
     user:{
      type:String,
      require:true
     },
-   firstname:{
+   firstName:{
     type:String,
     require:true
    },
-   lastname:{
+   lastName:{
     type:String,
     require:true
    },
@@ -20,10 +20,7 @@ const ProfileInfo=new mongoose.Schema({
     require:true
    },
 
-   email:{
-    type:String,
-    require:true
-   }
+   
 
 
 });
@@ -32,4 +29,4 @@ const ProfileInfo=new mongoose.Schema({
 
 
 
-module.exports=mongoose.model("profileInfo",ProfileInfo);
+module.exports=mongoose.model("profileInfonames",names);
