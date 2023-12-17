@@ -1,7 +1,7 @@
 const express=require("express");
 const routes=express.Router();
 
-const {signup,uploadProduct,getdata,addtocart,imageUpload,removeFromCart,isPresentInCart,getAllProductsInCart,getProductsByCategory,profileinfonames,getProfileInfoNames }=require('../controllers/handlers');
+const {signup,uploadProduct,getdata,addtocart,imageUpload,removeFromCart,isPresentInCart,getAllProductsInCart,getProductsByCategory,profileinfonames,getProfileInfoNames,submitEmail,getEmailData }=require('../controllers/handlers');
 
 
 routes.post("/signup",signup);
@@ -26,6 +26,9 @@ routes.post('/saveprofileinfoname',profileinfonames);
 
 routes.post('/getprofileinfonames',getProfileInfoNames);
 
+routes.post('/submitemail',submitEmail);
+
+routes.post('/getemaildata',getEmailData);
 
 
 module.exports=routes;

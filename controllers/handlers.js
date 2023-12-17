@@ -4,7 +4,7 @@ const Product = require('../models/product');
 const Cart = require('../models/cart');
 const File=require('../models/File');
 const cloudinary = require("cloudinary").v2;
-
+const Emaildata=require('../models/Emaildata')
 
 require('dotenv').config();
 
@@ -489,3 +489,78 @@ exports.getProfileInfoNames = async (req, res) => {
       });
    }
 };
+
+exports.submitEmail = async (req, res) => {
+   try {
+     const { user, email } = req.body;
+ 
+     if (!user || !email) {
+       return res.status(400).json({
+         success: false,
+         message: "User and email are required fields",
+       });
+     }
+ 
+     const existingEmailData = await Emaildata.findOne({ user });
+ 
+     if (existingEmailData) {
+       return res.status(200).json({
+         success: true,
+         message: "Email data already present",
+         emailData: existingEmailData,
+       });
+     }
+ 
+     const newEmailData = await Emaildata.create({
+       user,
+       email,
+     });
+ 
+     return res.status(201).json({
+       success: true,
+       message: "Email data submitted successfully",
+       emailData: newEmailData,
+     });
+   } catch (error) {
+     console.error(error);
+     return res.status(500).json({
+       success: false,
+       message: "Internal Server Error",
+     });
+   }
+ };
+
+ exports.getEmailData = async (req, res) => {
+   try {
+     const { user } = req.body;
+ 
+     if (!user) {
+       return res.status(400).json({
+         success: false,
+         message: "User ID is missing",
+       });
+     }
+ 
+     const emailData = await Emaildata.findOne({ user });
+ 
+     if (!emailData) {
+       return res.status(404).json({
+         success: false,
+         message: "Email data not found for the user",
+       });
+     }
+ 
+     return res.status(200).json({
+       success: true,
+       message: "Email data retrieved successfully",
+       emailData,
+     });
+   } catch (error) {
+     console.error(error);
+     return res.status(500).json({
+       success: false,
+       message: "Internal Server Error",
+     });
+   }
+ };
+
