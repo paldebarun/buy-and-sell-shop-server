@@ -401,10 +401,10 @@ exports.getProductsByCategory = async (req, res) => {
 
  exports.profileinfonames = async (req, res) => {
    try {
-      const { user, firstName, lastName } = req.body;
+      const { user, firstName, lastName ,gender} = req.body;
       
       
-      if (!user || !firstName || !lastName) {
+      if (!user || !firstName || !lastName || !gender) {
          return res.status(400).json({
             success: false,
             message: "Required fields are missing",
@@ -426,6 +426,7 @@ exports.getProductsByCategory = async (req, res) => {
          user,
          firstName,
          lastName,
+         gender
       });
 
       return res.status(200).json({
