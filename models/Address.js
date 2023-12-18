@@ -47,11 +47,11 @@ const Address=new mongoose.Schema({
     require:true
    },
    latitude:{
-    type:String,
+    type:Number,
     require:true
    },
    longitude:{
-    type:String,
+    type:Number,
     require:true
    }
 
