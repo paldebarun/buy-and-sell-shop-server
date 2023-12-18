@@ -4,7 +4,8 @@ const Product = require('../models/product');
 const Cart = require('../models/cart');
 const File=require('../models/File');
 const cloudinary = require("cloudinary").v2;
-const Emaildata=require('../models/Emaildata')
+const Emaildata=require('../models/Emaildata');
+const Address = require('../models/Address');
 
 require('dotenv').config();
 
@@ -564,4 +565,64 @@ exports.submitEmail = async (req, res) => {
      });
    }
  };
+
+ exports.addAddress = async (req, res) => {
+   try {
+     const {
+       user,
+       name,
+       mobilenumber,
+       pincode,
+       locality,
+       address,
+       city,
+       state,
+       landmark,
+       altphone,
+       addresstype,
+       latitude,
+       longitude
+     } = req.body;
+ 
+     
+     if (!user || !name || !mobilenumber || !pincode || !locality || !address || !city || !state || !addresstype || !latitude || !longitude) {
+       return res.status(400).json({
+         success: false,
+         message: "Please provide all required information for the address."
+       });
+     }
+ 
+     
+     const newAddress = await Address.create({
+       user,
+       name,
+       mobilenumber,
+       pincode,
+       locality,
+       address,
+       city,
+       state,
+       landmark,
+       altphone,
+       addresstype,
+       latitude,
+       longitude
+     });
+ 
+     return res.status(201).json({
+       success: true,
+       message: "Address added successfully",
+       address: newAddress
+     });
+   } catch (error) {
+     console.error(error);
+     return res.status(500).json({
+       success: false,
+       message: "Internal Server Error"
+     });
+   }
+ };
+
+ 
+
 
