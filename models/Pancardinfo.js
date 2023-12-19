@@ -19,7 +19,7 @@ const Pancardinfo=new mongoose.Schema({
     require:true
    },
    aggreement:{
-    type:String,
+    type:Boolean,
     require:true
    }
 
