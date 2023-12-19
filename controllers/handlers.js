@@ -6,6 +6,8 @@ const File=require('../models/File');
 const cloudinary = require("cloudinary").v2;
 const Emaildata=require('../models/Emaildata');
 const Address = require('../models/Address');
+const Pancardinfo=require('../models/Pancardinfo');
+
 
 require('dotenv').config();
 
@@ -624,5 +626,55 @@ exports.submitEmail = async (req, res) => {
  };
 
  
+ exports.addOrUpdatePancard = async (req, res) => {
+   try {
+      const { user, number, fullname, imageUrl, aggreement } = req.body;
 
+      if (!user || !number || !fullname || !imageUrl || !aggreement) {
+         return res.status(400).json({
+            success: false,
+            message: "Required fields are missing",
+         });
+      }
+
+      let pancard = await Pancardinfo.findOne({ user });
+
+      if (!pancard) {
+         
+         pancard = await Pancardinfo.create({
+            user,
+            number,
+            fullname,
+            imageUrl,
+            aggreement
+         });
+
+         return res.status(201).json({
+            success: true,
+            message: "Pancard details added successfully",
+            pancard,
+         });
+      }
+
+     
+      pancard = await Pancardinfo.findOneAndUpdate(
+         { user },
+         { number, fullname, imageUrl, aggreement },
+         { new: true }
+      );
+
+      return res.status(200).json({
+         success: true,
+         message: "Pancard details updated successfully",
+         pancard,
+      });
+
+   } catch (error) {
+      console.error(error);
+      return res.status(500).json({
+         success: false,
+         message: "Internal server error",
+      });
+   }
+};
 
