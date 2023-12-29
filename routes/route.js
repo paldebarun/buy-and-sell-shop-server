@@ -1,7 +1,7 @@
 const express=require("express");
 const routes=express.Router();
 
-const {signup,uploadProduct,getdata,addtocart,imageUpload,removeFromCart,isPresentInCart,getAllProductsInCart,getProductsByCategory,profileinfonames,getProfileInfoNames,submitEmail,getEmailData,addAddress,addOrUpdatePancard }=require('../controllers/handlers');
+const {signup,uploadProduct,getdata,addtocart,imageUpload,removeFromCart,isPresentInCart,getAllProductsInCart,getProductsByCategory,profileinfonames,getProfileInfoNames,submitEmail,getEmailData,addAddress,addOrUpdatePancard,capturePayment,verifyPayment }=require('../controllers/handlers');
 
 
 routes.post("/signup",signup);
@@ -33,6 +33,11 @@ routes.post('/getemaildata',getEmailData);
 routes.post('/addAddress',addAddress);
 
 routes.post('/addpancard',addOrUpdatePancard);
+
+routes.post('/capturepayment',capturePayment);
+
+routes.post('/verifypayment',verifyPayment);
+
 
 
 module.exports=routes;

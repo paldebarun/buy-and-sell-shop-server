@@ -33,7 +33,11 @@ const Product=new mongoose.Schema({
    email:{
     type:String,
     require:true
-   }
+   },
+   users:[{
+    type:mongoose.Schema.Types.ObjectId,
+    ref:'User'
+   }]
 
 
 });

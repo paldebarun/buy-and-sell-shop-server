@@ -7,7 +7,7 @@ const cloudinary = require("cloudinary").v2;
 const Emaildata=require('../models/Emaildata');
 const Address = require('../models/Address');
 const Pancardinfo=require('../models/Pancardinfo');
-
+const {instance}=require('../config/razorpay');
 
 require('dotenv').config();
 
@@ -676,4 +676,134 @@ exports.submitEmail = async (req, res) => {
       });
    }
 };
+
+
+exports.capturePayment=async (req,res)=>{
+
+
+
+    const {products}=req.body;
+
+    if(products.length===0){
+      return res.json({success:false, message:"Please provide product Id"});
+    }
+
+    let totalAmount = 0;
+
+    for(const productId of products) {
+      let product;
+      try{
+          
+          product = await Product.findById(productId);
+          if(!product) {
+              return res.status(200).json({success:false, message:"Could not find the product"});
+          }
+          
+         //  const uid  = new mongoose.Types.ObjectId(user);
+         //  if(course.studentsEnrolled.includes(uid)) {
+         //      return res.status(200).json({success:false, message:"Student is already Enrolled"});
+         //  }
+          
+          totalAmount += product.price;
+          
+      }
+      catch(error) {
+          console.log(error);
+          return res.status(500).json({success:false, message:error.message});
+      }   
+  }
+
+  const currency = "INR";
+
+    const options = {
+        amount: totalAmount * 100,
+        currency,
+        receipt: Math.random(Date.now()).toString(),
+    }
+    
+    try{
+        const paymentResponse = await instance.orders.create(options);
+        res.json({
+            success:true,
+            message:paymentResponse,
+        })
+    }
+    catch(error) {
+        console.log(error);
+        return res.status(500).json({success:false, mesage:"Could not Initiate Order"});
+    }
+
+}
+
+
+exports.verifyPayment = async(req, res) => {
+   const razorpay_order_id = req.body?.razorpay_order_id;
+   const razorpay_payment_id = req.body?.razorpay_payment_id;
+   const razorpay_signature = req.body?.razorpay_signature;
+   const {products,user} = req.body;
+  
+
+   if(!razorpay_order_id ||
+       !razorpay_payment_id ||
+       !razorpay_signature || !products || !user) {
+           return res.status(200).json({success:false, message:"Payment Failed"});
+   }
+   
+
+   let body = razorpay_order_id + "|" + razorpay_payment_id;
+   const expectedSignature = crypto
+       .createHmac("sha256", process.env.RAZORPAY_SECRET)
+       .update(body.toString())
+       .digest("hex");
+
+       if(expectedSignature === razorpay_signature) {
+           
+           await enrollorder(products, user, res);
+           
+           return res.status(200).json({success:true, message:"Payment Verified"});
+       }
+       return res.status(200).json({success:"false", message:"Payment Failed"});
+
+}
+
+const enrollorder = async(products, user, res) => {
+
+   if(!products || !user) {
+       return res.status(400).json({success:false,message:"Please Provide data for products or UserId"});
+   }
+
+   for(const productId of products) {
+       try{
+           
+       const enrolledorder = await Product.findOneAndUpdate(
+           {_id:productId},
+           {$push:{users:user}},
+           {new:true},
+       )
+
+       if(!enrolledorder) {
+           return res.status(500).json({success:false,message:"product not Found"});
+       }
+
+       //find the student and add the course to their list of enrolledCOurses
+       const enrolledorders = await User.findByIdAndUpdate(user,
+           {$push:{
+               products: productId,
+           }},{new:true});
+           
+       ///bachhe ko mail send kardo
+      //  const emailResponse = await mailSender(
+      //      enrollStudents.email,
+      //      `Successfully Enrolled into ${enrolledCourse.courseName}`,
+      //      courseEnrollmentEmail(enrolledCourse.courseName, `${enrolledStudent.firstName}`)
+      //  )    
+       //console.log("Email Sent Successfully", emailResponse.response);
+       }
+       catch(error) {
+           console.log(error);
+           return res.status(500).json({success:false, message:error.message});
+       }
+   }
+
+}
 
