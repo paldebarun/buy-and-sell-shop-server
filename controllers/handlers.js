@@ -694,7 +694,7 @@ exports.capturePayment=async (req,res)=>{
       let product;
       try{
           
-          product = await Product.findById(productId);
+          product = await Product.findById(productId._id);
           if(!product) {
               return res.status(200).json({success:false, message:"Could not find the product"});
           }
