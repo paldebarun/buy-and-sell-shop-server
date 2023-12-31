@@ -821,3 +821,61 @@ const enrollorder = async(products, user, res) => {
 
 }
 
+
+exports.getorderdata=async (req,res)=>{
+
+   try{
+
+      const {user}=req.body;
+
+      const userdata=await User.findOne({id:user});
+
+      if(!userdata){
+         return res.json({
+            success:false,
+            message:"the user is not found"
+         });
+      }
+
+      
+
+      const products=userdata.products;
+      
+      let productarray = [];  
+
+        for (let productId of products) {
+            try {
+                const productdetails = await Product.findById(productId);
+                if (productdetails) {
+                    productarray.push(productdetails);
+                }
+            } catch (error) {
+                console.error(`Error fetching product ${productId}:`, error);
+            }
+        }
+
+
+
+
+      return res.status(200).json({
+         success:true,
+         message:"the orders are fetched",
+         orderarray:productarray
+      })
+
+
+
+   }
+   catch(error){
+
+
+      return res.status(500).json({
+         success:false,
+         mesage:"the there was some error",
+         error:error
+      })
+
+   }
+
+}
+
