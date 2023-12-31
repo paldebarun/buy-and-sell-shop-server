@@ -8,10 +8,10 @@ const Emaildata=require('../models/Emaildata');
 const Address = require('../models/Address');
 const Pancardinfo=require('../models/Pancardinfo');
 const {instance}=require('../config/razorpay');
+const mongoose=require('mongoose')
+const crypto = require('crypto');
 
 require('dotenv').config();
-
-
 
 exports.signup = async (req, res) => {
    try {
@@ -693,18 +693,20 @@ exports.capturePayment=async (req,res)=>{
     for(const productId of products) {
       let product;
       try{
-          
-          product = await Product.findById(productId._id);
+
+         
+          product = await Product.find({_id:productId._id});
           if(!product) {
               return res.status(200).json({success:false, message:"Could not find the product"});
           }
+          console.log("product : ",product);
+         
           
-         //  const uid  = new mongoose.Types.ObjectId(user);
-         //  if(course.studentsEnrolled.includes(uid)) {
-         //      return res.status(200).json({success:false, message:"Student is already Enrolled"});
-         //  }
-          
-          totalAmount += product.price;
+         
+          console.log("this is product price : ",product[0].price);
+          totalAmount += (product[0].price)/100;
+
+          console.log("totalamount : ",totalAmount);
           
       }
       catch(error) {
@@ -741,12 +743,18 @@ exports.verifyPayment = async(req, res) => {
    const razorpay_payment_id = req.body?.razorpay_payment_id;
    const razorpay_signature = req.body?.razorpay_signature;
    const {products,user} = req.body;
+
+   console.log("this is razor pay order id",razorpay_order_id);
+   console.log("this is razor pay payment id",razorpay_payment_id);
+   console.log("this is razor pay signature",razorpay_signature);
+   console.log("this is product  ",products);
+   console.log("this is user  ",user);
   
 
    if(!razorpay_order_id ||
        !razorpay_payment_id ||
        !razorpay_signature || !products || !user) {
-           return res.status(200).json({success:false, message:"Payment Failed"});
+           return res.status(200).json({success:false, message:"Payment Failed,attribute missing"});
    }
    
 
@@ -756,9 +764,14 @@ exports.verifyPayment = async(req, res) => {
        .update(body.toString())
        .digest("hex");
 
+       
+
+      //  console.log("this is expected signature",expectedSignature);
+      //  console.log("this is razorpay_signature",razorpay_signature);
+
        if(expectedSignature === razorpay_signature) {
            
-           await enrollorder(products, user, res);
+           await enrollorder(products, user.id, res);
            
            return res.status(200).json({success:true, message:"Payment Verified"});
        }
@@ -774,9 +787,10 @@ const enrollorder = async(products, user, res) => {
 
    for(const productId of products) {
        try{
+         
            
        const enrolledorder = await Product.findOneAndUpdate(
-           {_id:productId},
+           {_id:productId._id},
            {$push:{users:user}},
            {new:true},
        )
@@ -786,7 +800,7 @@ const enrollorder = async(products, user, res) => {
        }
 
        //find the student and add the course to their list of enrolledCOurses
-       const enrolledorders = await User.findByIdAndUpdate(user,
+       const enrolledorders = await User.findOneAndUpdate({id:user},
            {$push:{
                products: productId,
            }},{new:true});
