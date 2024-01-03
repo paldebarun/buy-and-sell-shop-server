@@ -11,6 +11,7 @@ const {instance}=require('../config/razorpay');
 const mongoose=require('mongoose')
 const crypto = require('crypto');
 
+
 require('dotenv').config();
 
 exports.signup = async (req, res) => {
@@ -878,4 +879,56 @@ exports.getorderdata=async (req,res)=>{
    }
 
 }
+
+
+exports.clearCart = async (req, res) => {
+   try {
+      const { user_id } = req.body;
+
+      if (!user_id) {
+         return res.status(400).json({
+            success: false,
+            message: "User ID is required",
+         });
+      }
+
+      const user = await User.findOne({ id: user_id });
+
+      if (!user) {
+         return res.status(404).json({
+            success: false,
+            message: "User not found",
+         });
+      }
+
+      const cart = await Cart.findById(user.cart);
+
+      if (!cart) {
+         return res.status(404).json({
+            success: false,
+            message: "Cart not found",
+         });
+      }
+
+      
+      cart.products = [];
+      
+      
+      await cart.save();
+
+      return res.status(200).json({
+         success: true,
+         message: "Cart cleared successfully",
+         updatedCart: cart,
+      });
+
+   } catch (error) {
+      console.error(error);
+      return res.status(500).json({
+         success: false,
+         message: "Internal server error",
+      });
+   }
+};
+
 
